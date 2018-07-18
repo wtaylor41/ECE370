@@ -179,6 +179,7 @@ private:
 	 * @return floating point value expressing an acceleration
 	 */
 	float convertReadingToAccel(int16_t reading);
+		return ((float)reading);
 };
 
 #endif

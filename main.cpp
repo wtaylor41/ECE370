@@ -52,9 +52,9 @@ int main(void)
 	 * all accelerations should be close to 1g. Your result
 	 * should not differ by more than 5%.
 	 */
-	//float x=accel.getXAcceleration();
-	//float y=accel.getYAcceleration();
-	//float z=accel.getZAcceleration();
+	float x=accel.getXAcceleration();
+	float y=accel.getYAcceleration();
+	float z=accel.getZAcceleration();
 
 	/**
 	 * Use illegal math functions to calculate a square root.

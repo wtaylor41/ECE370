@@ -81,7 +81,7 @@ bool LIS3DH::initialize()
 	 * High Resolution Mode make sure to delay 7ms after switching modes.
 	 * See application note for details.
 	 */
-	//setupLIS3DH();
+	setupLIS3DH();
 
 	return true;
 }
@@ -98,9 +98,8 @@ bool LIS3DH::selfTest()
 	 * The returned value should be 0x33 if successful.
 	 * Return true if successful, false otherwise.
 	 */
-	uint8_t whoAmI = 0;
-	if(readRegister(WHO_AM_I_REG) == 33){
-		whoAmI = 33;
+	uint8_t whoAmI = readRegister(WHO_AM_I_REG);
+	if(whoAmI == 0x33){
 		return true;
 
 	} else {
@@ -179,18 +178,30 @@ void LIS3DH::setupUSART()
 
 	//set Pin Location to Loc#1
 	modifyBitField(&USART1->ROUTE, 7, 0x1, 8);
+
+	modifyBitField(&USART1->CMD, 1, 0x1, 2);
+
+	modifyBitField(&USART1->CMD, 1, 0x1, 0);
+
+	modifyBitField(&USART1->CMD, 1, 0x1, 4);
 }
 
+void LIS3DH::setupLIS3DH(){
+
+	writeRegister(0x20, 0b01000111);
+	writeRegister(0x23, (0x1 << 3));
+
+}
 uint8_t LIS3DH::readRegister(uint8_t address)
 {
 	//pull ClkSel low
 	setPinOutputValue(gpioPortD, 3, 0);
 
 	//SPI Read address transfer
-	SPI_Transfer(address);
+	SPI_Transfer(address | 0x80);
 
 	//SPI dummy data transfer
-	SPI_Transfer(0b00000000);
+	SPI_Transfer(0x00);
 
 	//raise CS line
 	setPinOutputValue(gpioPortD, 3, 1);
@@ -221,9 +232,9 @@ uint8_t LIS3DH::SPI_Transfer(uint8_t data)
 
 	while(TXBufEmpty == false){
 		int TXBuf = readBit(&USART1->STATUS, 6);
-			if (TXBuf == 1){
-				TXBufEmpty = true;
-			}
+		if (TXBuf == 1){
+			TXBufEmpty = true;
+		}
 	}
 
 	//put data in TX register
@@ -231,12 +242,28 @@ uint8_t LIS3DH::SPI_Transfer(uint8_t data)
 
 	while(TXComplete == false){
 		int TXC = readBit(&USART1->STATUS, 5);
-			if(TXC == 1){
-				TXComplete = true;
-			}
+		if(TXC == 1){
+			TXComplete = true;
+		}
 	}
 
 	//return data in RXDATA
 	return USART1->RXDATA;
 }
+float LIS3DH::getXAcceleration(){
+	uint8_t high = (readRegister(0x29));
+	uint8_t low = readRegister(0x28);
+	return ((uint16_t)(high << 8) | (uint16_t)low);
+}
+float LIS3DH::getYAcceleration(){
+	uint8_t high = (readRegister(0x2A));
+	uint8_t low = readRegister(0x2B);
 
+	return ((uint16_t)(high << 8) | (uint16_t)low);
+
+}
+float LIS3DH::getZAcceleration(){
+	uint8_t high = (readRegister(0x2C));
+	uint8_t low = readRegister(0x2D);
+	return ((uint16_t)(high << 8) | (uint16_t)low);
+}
